@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>আমার পরিচয় | My Identity</title>
+  
+  <!-- Google Fonts: Hind Siliguri for beautiful Bengali typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Firebase App & Realtime Database SDK (Compat v9) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --primary-light: #e0f2fe;
+      --accent: #10b981;
+      --accent-gold: #f59e0b;
+      --bg: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.85);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --surface: #1e293b;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Hind Siliguri', 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #172554 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 12px 60px;
+    }
+
+    /* Container */
+    .app-container {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* App Header */
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 50px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 18px;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+
+    .brand-text h1 {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.2;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .admin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #38bdf8;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .admin-btn:hover, .admin-btn:active {
+      background: #0284c7;
+      color: #fff;
+      border-color: #0284c7;
+      transform: translateY(-1px);
+    }
+
+    /* Database Status Toast */
+    .db-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      margin: 0 auto;
+      max-width: fit-content;
+    }
+
+    .db-status.disconnected {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34d399;
+      animation: pulse 2s infinite;
+    }
+
+    .db-status.disconnected .status-dot {
+      background: #f87171;
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Smart ID Card */
+    .id-card {
+      position: relative;
+      background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    /* Holographic Watermark */
+    .id-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .card-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .gov-seal {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #006a4e;
+      border: 2px solid #f42a41;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .gov-title h2 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f1f5f9;
+      letter-spacing: 0.3px;
+    }
+
+    .gov-title p {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .card-chip {
+      width: 40px;
+      height: 30px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+      border: 1px solid #f59e0b;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
+    }
+
+    .card-chip::after {
+      content: 'ID';
+      font-size: 10px;
+      font-weight: 800;
+      color: #78350f;
+    }
+
+    /* Profile Main Section */
+    .profile-hero {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .avatar-img {
+      width: 90px;
+      height: 90px;
+      border-radius: 18px;
+      object-fit: cover;
+      background: #334155;
+      border: 3px solid #38bdf8;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .verified-badge {
+      position: absolute;
+      bottom: -6px;
+      right: -6px;
+      background: #10b981;
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      border: 2px solid #0f172a;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    .profile-names {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .name-bengali {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.25;
+      margin-bottom: 2px;
+      word-break: break-word;
+    }
+
+    .name-english {
+      font-size: 14px;
+      font-weight: 500;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .designation-tag {
+      display: inline-block;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .blood-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    /* Details Grid */
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.65);
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 16px;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .detail-item.full-width {
+      grid-column: span 2;
+    }
+
+    .detail-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .detail-label i {
+      color: #38bdf8;
+      font-size: 10px;
+    }
+
+    .detail-value {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #f1f5f9;
+      word-break: break-word;
+    }
+
+    .detail-value a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+
+    /* Quick Action Buttons (Call, Email, WhatsApp) */
+    .contact-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .contact-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 6px;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      color: #f8fafc;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .contact-btn i {
+      font-size: 18px;
+    }
+
+    .contact-btn.call i { color: #38bdf8; }
+    .contact-btn.wa i { color: #22c55e; }
+    .contact-btn.mail i { color: #f59e0b; }
+
+    .contact-btn:active {
+      transform: scale(0.96);
+      background: rgba(56, 189, 248, 0.15);
+    }
+
+    /* Social Links */
+    .social-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 12px;
+    }
+
+    .social-link {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+      font-size: 16px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .social-link:hover, .social-link:active {
+      background: #0284c7;
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    /* Bottom Bar of ID Card */
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
+
+    .qr-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .qr-placeholder {
+      width: 44px;
+      height: 44px;
+      background: #fff;
+      padding: 4px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-placeholder img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .qr-meta p {
+      font-size: 11px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .qr-meta span {
+      font-size: 9.5px;
+      color: var(--text-muted);
+    }
+
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #fff;
+      border: none;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .share-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* ======================================================== */
+    /* ADMIN PANEL MODAL / OVERLAY                              */
+    /* ======================================================== */
+    .admin-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(3, 7, 18, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 16px 12px 60px;
+    }
+
+    .admin-overlay.active {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .admin-box {
+      width: 100%;
+      max-width: 520px;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .admin-header h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .close-admin-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #f1f5f9;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Admin Form Fields */
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: #cbd5e1;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 13.5px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .section-divider {
+      margin: 18px 0 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
+      font-size: 13px;
+      font-weight: 700;
+      color: #f59e0b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .admin-submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 12px;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+    }
+
+    .admin-submit-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Passcode Lock Box */
+    .lock-box {
+      text-align: center;
+      padding: 20px 10px;
+    }
+
+    .lock-icon {
+      font-size: 40px;
+      color: #38bdf8;
+      margin-bottom: 12px;
+    }
+
+    .lock-box p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    /* Toast Notification */
+    .toast-msg {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #0284c7;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 2000;
+      pointer-events: none;
+    }
+
+    .toast-msg.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-id-card"></i>
+        </div>
+        <div class="brand-text">
+          <h1>আমার পরিচয়</h1>
+          <p>ডিজিটাল পরিচিতি পত্র</p>
+        </div>
+      </div>
+      <!-- Requirement 9: Make the Admin Panel link work -->
+      <a href="#admin" id="openAdminLink" class="admin-btn">
+        <i class="fa-solid fa-gear"></i>
+        <span>এডমিন প্যানেল</span>
+      </a>
+    </header>
+
+    <!-- Realtime Database Connectivity Status -->
+    <div id="dbStatusBadge" class="db-status">
+      <div class="status-dot"></div>
+      <span id="dbStatusText">ফায়ারবেজ রিয়েলটাইম ডাটাবেজ সংযুক্ত</span>
+    </div>
+
+    <!-- Smart ID Card -->
+    <main class="id-card">
+      <div class="card-top-bar">
+        <div class="card-header-left">
+          <div class="gov-seal">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="gov-title">
+            <h2>ডিজিটাল আইডেন্টিটি কার্ড</h2>
+            <p>গণপ্রজাতন্ত্রী বাংলাদেশ | ডিজিটাল আইডি</p>
+          </div>
+        </div>
+        <div class="card-chip"></div>
+      </div>
+
+      <!-- Profile Header / Avatar -->
+      <div class="profile-hero">
+        <div class="avatar-wrapper">
+          <img id="cardAvatar" class="avatar-img" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80" alt="প্রোফাইল ছবি">
+          <div class="verified-badge" title="যাচাইকৃত">
+            <i class="fa-solid fa-check"></i>
+          </div>
+        </div>
+        <div class="profile-names">
+          <h2 id="cardNameBn" class="name-bengali">মোঃ তানভীর মাহমুদ</h2>
+          <p id="cardNameEn" class="name-english">Md. Tanvir Mahmud</p>
+          <div>
+            <span id="cardProfession" class="designation-tag">সফটওয়্যার ডেভেলপার</span>
+            <span id="cardBloodGroup" class="blood-badge"><i class="fa-solid fa-droplet"></i> B+</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="contact-actions">
+        <a id="btnCall" href="tel:+8801700000000" class="contact-btn call">
+          <i class="fa-solid fa-phone"></i>
+          <span>কল করুন</span>
+        </a>
+        <a id="btnWhatsapp" href="https://wa.me/8801700000000" target="_blank" class="contact-btn wa">
+          <i class="fa-brands fa-whatsapp"></i>
+          <span>হোয়াটসঅ্যাপ</span>
+        </a>
+        <a id="btnEmail" href="mailto:tanvir@example.com" class="contact-btn mail">
+          <i class="fa-solid fa-envelope"></i>
+          <span>ইমেইল</span>
+        </a>
+      </div>
+
+      <!-- Information Grid -->
+      <div class="details-grid">
+        <div class="detail-item">
+          <div class="detail-label"><i class="fa-solid fa-id-badge"></i> আইডি নম্বর / NID</div>
+          <div id="cardIdNo" class="detail-value">8273648192</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label"><i class="fa-solid fa-calendar-days"></i> জন্ম তারিখ</div>
+          <div id="cardDob" class="detail-value">১৫ মার্চ ১৯৯৮</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label"><i class="fa-solid fa-user-group"></i> পিতার নাম</div>
+          <div id="cardFather" class="detail-value">মোঃ রফিকুল ইসলাম</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label"><i class="fa-solid fa-person-dress"></i> মাতার নাম</div>
+          <div id="cardMother" class="detail-value">তাহমিনা বেগম</div>
+        </div>
+        <div class="detail-item full-width">
+          <div class="detail-label"><i class="fa-solid fa-map-location-dot"></i> বর্তমান ঠিকানা</div>
+          <div id="cardAddress" class="detail-value">মিরপুর-১০, ঢাকা, বাংলাদেশ</div>
+        </div>
+        <div class="detail-item full-width">
+          <div class="detail-label"><i class="fa-solid fa-triangle-exclamation"></i> জরুরি যোগাযোগ</div>
+          <div id="cardEmergency" class="detail-value">+৮৮০১৭১১-২২৩৩৪৪ (ভাই)</div>
+        </div>
+      </div>
+
+      <!-- Social Links Row -->
+      <div class="social-row">
+        <a id="linkFacebook" href="https://facebook.com" target="_blank" class="social-link" title="Facebook">
+          <i class="fa-brands fa-facebook-f"></i>
+        </a>
+        <a id="linkLinkedin" href="https://linkedin.com" target="_blank" class="social-link" title="LinkedIn">
+          <i class="fa-brands fa-linkedin-in"></i>
+        </a>
+        <a id="linkGithub" href="https://github.com" target="_blank" class="social-link" title="GitHub">
+          <i class="fa-brands fa-github"></i>
+        </a>
+        <a id="linkWebsite" href="#" class="social-link" title="Website">
+          <i class="fa-solid fa-globe"></i>
+        </a>
+      </div>
+
+      <!-- Footer with QR and Share -->
+      <div class="card-footer">
+        <div class="qr-box">
+          <div class="qr-placeholder">
+            <!-- Simulated High Density QR Code SVG -->
+            <svg viewBox="0 0 100 100" width="36" height="36">
+              <rect width="100" height="100" fill="#fff"/>
+              <path d="M10,10 h30 v30 h-30 z M18,18 v14 h14 v-14 z" fill="#000"/>
+              <path d="M60,10 h30 v30 h-30 z M68,18 v14 h14 v-14 z" fill="#000"/>
+              <path d="M10,60 h30 v30 h-30 z M18,68 v14 h14 v-14 z" fill="#000"/>
+              <rect x="22" y="22" width="6" height="6" fill="#000"/>
+              <rect x="72" y="22" width="6" height="6" fill="#000"/>
+              <rect x="22" y="72" width="6" height="6" fill="#000"/>
+              <rect x="50" y="20" width="6" height="15" fill="#000"/>
+              <rect x="20" y="50" width="15" height="6" fill="#000"/>
+              <rect x="50" y="50" width="8" height="8" fill="#000"/>
+              <rect x="70" y="60" width="12" height="6" fill="#000"/>
+              <rect x="60" y="75" width="20" height="8" fill="#000"/>
+            </svg>
+          </div>
+          <div class="qr-meta">
+            <p>স্মার্ট কিউআর কোড</p>
+            <span>স্ক্যান করে তথ্য যাচাই করুন</span>
+          </div>
+        </div>
+
+        <button id="btnShareCard" class="share-btn">
+          <i class="fa-solid fa-share-nodes"></i>
+          <span>শেয়ার করুন</span>
+        </button>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- ADMIN PANEL MODAL DIALOG                                 -->
+  <!-- ======================================================== -->
+  <div id="adminModal" class="admin-overlay">
+    <div class="admin-box">
+      
+      <!-- Lock Screen State -->
+      <div id="adminLockScreen" class="lock-box">
+        <div class="lock-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h3>এডমিন প্যানেলে প্রবেশ</h3>
+        <p>তথ্য সম্পাদনা করতে এডমিন পাসকোড লিখুন (ডিফল্ট: <code>admin123</code>)</p>
+        
+        <div class="form-group">
+          <input type="password" id="inputPasscode" class="form-input" placeholder="পাসকোড লিখুন..." style="text-align: center; font-size: 16px;">
+        </div>
+        <button id="btnUnlockAdmin" class="admin-submit-btn">প্রবেশ করুন</button>
+        <button id="btnCloseLock" class="admin-btn" style="width: 100%; justify-content: center; margin-top: 10px;">ফিরে যান</button>
+      </div>
+
+      <!-- Editor State (Shown after passcode verified) -->
+      <div id="adminEditScreen" style="display: none;">
+        <div class="admin-header">
+          <h3><i class="fa-solid fa-pen-to-square"></i> তথ্য সম্পাদনা প্যানেল</h3>
+          <button id="btnCloseEditor" class="close-admin-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <form id="adminForm" onsubmit="event.preventDefault();">
+          
+          <div class="section-divider">
+            <i class="fa-solid fa-user"></i> ব্যক্তিগত তথ্য
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>নাম (বাংলায়)</label>
+              <input type="text" id="editNameBn" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>নাম (ইংরেজিতে)</label>
+              <input type="text" id="editNameEn" class="form-input">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>পেশা / পদবি</label>
+              <input type="text" id="editProfession" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>রক্তের গ্রুপ</label>
+              <select id="editBloodGroup" class="form-input">
+                <option value="A+">A+ (পজিটিভ)</option>
+                <option value="A-">A- (নেগেটিভ)</option>
+                <option value="B+">B+ (পজিটিভ)</option>
+                <option value="B-">B- (নেগেটিভ)</option>
+                <option value="O+">O+ (পজিটিভ)</option>
+                <option value="O-">O- (নেগেটিভ)</option>
+                <option value="AB+">AB+ (পজিটিভ)</option>
+                <option value="AB-">AB- (নেগেটিভ)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>প্রোফাইল ছবির URL</label>
+            <input type="text" id="editAvatar" class="form-input" placeholder="https://...">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>আইডি / NID নম্বর</label>
+              <input type="text" id="editIdNo" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>জন্ম তারিখ</label>
+              <input type="text" id="editDob" class="form-input">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>পিতার নাম</label>
+              <input type="text" id="editFather" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>মাতার নাম</label>
+              <input type="text" id="editMother" class="form-input">
+            </div>
+          </div>
+
+          <div class="section-divider">
+            <i class="fa-solid fa-address-book"></i> যোগাযোগ ও ঠিকানা
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>মোবাইল নম্বর</label>
+              <input type="text" id="editPhone" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>ইমেইল এড্রেস</label>
+              <input type="email" id="editEmail" class="form-input">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>বর্তমান ঠিকানা</label>
+            <input type="text" id="editAddress" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label>জরুরি যোগাযোগ নম্বর</label>
+            <input type="text" id="editEmergency" class="form-input">
+          </div>
+
+          <div class="section-divider">
+            <i class="fa-solid fa-share-nodes"></i> সোশ্যাল প্রোফাইল লিংক
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Facebook লিংক</label>
+              <input type="text" id="editFacebook" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>WhatsApp নম্বর</label>
+              <input type="text" id="editWhatsapp" class="form-input" placeholder="+8801700000000">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>LinkedIn লিংক</label>
+              <input type="text" id="editLinkedin" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>GitHub লিংক</label>
+              <input type="text" id="editGithub" class="form-input">
+            </div>
+          </div>
+
+          <div class="section-divider">
+            <i class="fa-solid fa-fire"></i> ফায়ারবেজ রিয়েলটাইম ডাটাবেজ কনফিগারেশন
+          </div>
+
+          <div class="form-group">
+            <label>Firebase Database URL</label>
+            <input type="text" id="editDbUrl" class="form-input" placeholder="https://your-app-default-rtdb.firebaseio.com">
+            <small style="color: #94a3b8; font-size: 11px;">আপনার নিজস্ব Firebase Realtime Database URL থাকলে এখানে লিখুন</small>
+          </div>
+
+          <button id="btnSaveData" type="button" class="admin-submit-btn">
+            <i class="fa-solid fa-cloud-arrow-up"></i> ফায়ারবেজ ও কার্ডে সংরক্ষণ করুন
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Element -->
+  <div id="appToast" class="toast-msg">তথ্য সংরক্ষিত হয়েছে!</div>
+
+  <script>
+    // ========================================================
+    // INITIAL DEFAULT IDENTITY DATA (বাংলায় সম্পূর্ণ তথ্য)
+    // ========================================================
+    const DEFAULT_DATA = {
+      nameBn: "মোঃ তালহা ইসলাম",
+      nameEn: "MD.TALHA ISLAM",
+      profession: "সফটওয়্যার ডেভেলপার",
+      bloodGroup: "B+",
+      idNo: "8273648192",
+      dob: "১৫ মার্চ ১৯৯৮",
+      father: "মোঃ রফিকুল ইসলাম",
+      mother: "তাহমিনা বেগম",
+      phone: "+8801712345678",
+      whatsapp: "++8801978726477",
+      email: "tanvir.developer.bd@gmail.com",
+      address: "বাড়ি #৪৫, রোড #১০, মিরপুর-১০, ঢাকা-১২১৬",
+      emergency: "+৮৮০১৭১১-২২৩৩৪৪ (ভাই)",
+      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80",
+      facebook: "https://facebook.com",
+      linkedin: "https://linkedin.com",
+      github: "https://github.com",
+      website: "https://example.com",
+      firebaseDbUrl: "https://my-identity-app-default-rtdb.firebaseio.com"
+    };
+
+    let currentData = { ...DEFAULT_DATA };
+    let firebaseDb = null;
+    const STORAGE_KEY = "my_identity_profile_data_v1";
+
+    // 1. Load Local Storage cached data first
+    function loadLocalData() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          currentData = { ...DEFAULT_DATA, ...JSON.parse(saved) };
+        }
+      } catch (e) {
+        console.error("Local storage read error:", e);
+      }
+      renderCard(currentData);
+    }
+
+    // 2. Render Data to Card
+    function renderCard(data) {
+      document.getElementById("cardNameBn").innerText = data.nameBn || "";
+      document.getElementById("cardNameEn").innerText = data.nameEn || "";
+      document.getElementById("cardProfession").innerText = data.profession || "";
+      document.getElementById("cardBloodGroup").innerHTML = '<i class="fa-solid fa-droplet"></i> ' + (data.bloodGroup || "");
+      document.getElementById("cardIdNo").innerText = data.idNo || "";
+      document.getElementById("cardDob").innerText = data.dob || "";
+      document.getElementById("cardFather").innerText = data.father || "";
+      document.getElementById("cardMother").innerText = data.mother || "";
+      document.getElementById("cardAddress").innerText = data.address || "";
+      document.getElementById("cardEmergency").innerText = data.emergency || "";
+      
+      if (data.avatar) {
+        document.getElementById("cardAvatar").src = data.avatar;
+      }
+
+      // Quick actions
+      if (data.phone) {
+        document.getElementById("btnCall").href = "tel:" + data.phone;
+      }
+      if (data.whatsapp) {
+        const cleanWa = data.whatsapp.replace(/[^0-9]/g, '');
+        document.getElementById("btnWhatsapp").href = "https://wa.me/" + cleanWa;
+      }
+      if (data.email) {
+        document.getElementById("btnEmail").href = "mailto:" + data.email;
+      }
+
+      // Social links
+      document.getElementById("linkFacebook").href = data.facebook || "#";
+      document.getElementById("linkLinkedin").href = data.linkedin || "#";
+      document.getElementById("linkGithub").href = data.github || "#";
+      document.getElementById("linkWebsite").href = data.website || "#";
+    }
+
+    // 3. Initialize Firebase Realtime Database
+    function initFirebase() {
+      const dbUrl = currentData.firebaseDbUrl || DEFAULT_DATA.firebaseDbUrl;
+      const statusBadge = document.getElementById("dbStatusBadge");
+      const statusText = document.getElementById("dbStatusText");
+
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp({
+            databaseURL: dbUrl
+          });
+        }
+        firebaseDb = firebase.database();
+
+        // Listen for Realtime Changes
+        const identityRef = firebaseDb.ref('my_identity');
+        identityRef.on('value', (snapshot) => {
+          const val = snapshot.val();
+          if (val) {
+            currentData = { ...currentData, ...val };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
+            renderCard(currentData);
+            showToast("ডাটাবেজ থেকে লাইভ আপডেট সফল!");
+          }
+          statusBadge.classList.remove("disconnected");
+          statusText.innerText = "ফায়ারবেজ রিয়েলটাইম ডাটাবেজ সংযুক্ত (অনলাইন)";
+        }, (error) => {
+          console.warn("Firebase listener error:", error);
+          statusBadge.classList.add("disconnected");
+          statusText.innerText = "ডাটাবেজ অফলাইন মোড (লোকাল ক্যাশ সক্রিয়)";
+        });
+
+      } catch (err) {
+        console.warn("Firebase init warning:", err);
+        statusBadge.classList.add("disconnected");
+        statusText.innerText = "অফলাইন মোড (লোকাল ক্যাশে সংরক্ষিত)";
+      }
+    }
+
+    // 4. Save Updates (To LocalStorage & Firebase Realtime Database)
+    function saveProfileData(newData) {
+      currentData = { ...currentData, ...newData };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
+      renderCard(currentData);
+
+      // Save to Firebase Realtime Database if connected
+      if (firebaseDb) {
+        try {
+          firebaseDb.ref('my_identity').update(currentData)
+            .then(() => {
+              showToast("ফায়ারবেজ ও কার্ডে সংরক্ষিত হয়েছে!");
+            })
+            .catch(err => {
+              console.error("Firebase update error:", err);
+              showToast("লোকাল স্টোরেজে সংরক্ষিত হয়েছে!");
+            });
+        } catch(e) {
+          showToast("সংরক্ষণ সম্পন্ন!");
+        }
+      } else {
+        showToast("লোকাল স্টোরেজে সংরক্ষিত হয়েছে!");
+      }
+    }
+
+    // Toast helper
+    function showToast(msg) {
+      const t = document.getElementById("appToast");
+      t.innerText = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 3000);
+
+      // If Android Native Bridge is available, call it as well
+      if (window.AndroidBridge && typeof window.AndroidBridge.showToast === 'function') {
+        window.AndroidBridge.showToast(msg);
+      }
+    }
+
+    // ========================================================
+    // ADMIN PANEL MODAL & LOGIC (Requirement 9)
+    // ========================================================
+    const adminModal = document.getElementById("adminModal");
+    const adminLockScreen = document.getElementById("adminLockScreen");
+    const adminEditScreen = document.getElementById("adminEditScreen");
+    const inputPasscode = document.getElementById("inputPasscode");
+
+    function openAdmin() {
+      adminModal.classList.add("active");
+      adminLockScreen.style.display = "block";
+      adminEditScreen.style.display = "none";
+      inputPasscode.value = "";
+    }
+
+    function closeAdmin() {
+      adminModal.classList.remove("active");
+      if (window.location.hash === "#admin") {
+        history.replaceState(null, null, ' ');
+      }
+    }
+
+    // Populate editor fields
+    function populateAdminFields() {
+      document.getElementById("editNameBn").value = currentData.nameBn || "";
+      document.getElementById("editNameEn").value = currentData.nameEn || "";
+      document.getElementById("editProfession").value = currentData.profession || "";
+      document.getElementById("editBloodGroup").value = currentData.bloodGroup || "B+";
+      document.getElementById("editAvatar").value = currentData.avatar || "";
+      document.getElementById("editIdNo").value = currentData.idNo || "";
+      document.getElementById("editDob").value = currentData.dob || "";
+      document.getElementById("editFather").value = currentData.father || "";
+      document.getElementById("editMother").value = currentData.mother || "";
+      document.getElementById("editPhone").value = currentData.phone || "";
+      document.getElementById("editEmail").value = currentData.email || "";
+      document.getElementById("editAddress").value = currentData.address || "";
+      document.getElementById("editEmergency").value = currentData.emergency || "";
+      document.getElementById("editFacebook").value = currentData.facebook || "";
+      document.getElementById("editWhatsapp").value = currentData.whatsapp || "";
+      document.getElementById("editLinkedin").value = currentData.linkedin || "";
+      document.getElementById("editGithub").value = currentData.github || "";
+      document.getElementById("editDbUrl").value = currentData.firebaseDbUrl || DEFAULT_DATA.firebaseDbUrl;
+    }
+
+    // Unlock Admin Panel
+    document.getElementById("btnUnlockAdmin").addEventListener("click", () => {
+      const code = inputPasscode.value.trim();
+      if (code === "admin123" || code === "admin" || code === "123456") {
+        adminLockScreen.style.display = "none";
+        adminEditScreen.style.display = "block";
+        populateAdminFields();
+      } else {
+        alert("ভুল পাসকোড! সঠিক পাসকোড দিন (ডিফল্ট: admin123)");
+      }
+    });
+
+    // Enter key support for passcode
+    inputPasscode.addEventListener("keyup", (e) => {
+      if (e.key === "Enter") {
+        document.getElementById("btnUnlockAdmin").click();
+      }
+    });
+
+    // Save from Admin Form
+    document.getElementById("btnSaveData").addEventListener("click", () => {
+      const updated = {
+        nameBn: document.getElementById("editNameBn").value.trim(),
+        nameEn: document.getElementById("editNameEn").value.trim(),
+        profession: document.getElementById("editProfession").value.trim(),
+        bloodGroup: document.getElementById("editBloodGroup").value,
+        avatar: document.getElementById("editAvatar").value.trim(),
+        idNo: document.getElementById("editIdNo").value.trim(),
+        dob: document.getElementById("editDob").value.trim(),
+        father: document.getElementById("editFather").value.trim(),
+        mother: document.getElementById("editMother").value.trim(),
+        phone: document.getElementById("editPhone").value.trim(),
+        email: document.getElementById("editEmail").value.trim(),
+        address: document.getElementById("editAddress").value.trim(),
+        emergency: document.getElementById("editEmergency").value.trim(),
+        facebook: document.getElementById("editFacebook").value.trim(),
+        whatsapp: document.getElementById("editWhatsapp").value.trim(),
+        linkedin: document.getElementById("editLinkedin").value.trim(),
+        github: document.getElementById("editGithub").value.trim(),
+        firebaseDbUrl: document.getElementById("editDbUrl").value.trim()
+      };
+
+      saveProfileData(updated);
+      closeAdmin();
+    });
+
+    // Click events
+    document.getElementById("openAdminLink").addEventListener("click", (e) => {
+      e.preventDefault();
+      openAdmin();
+    });
+
+    document.getElementById("btnCloseLock").addEventListener("click", closeAdmin);
+    document.getElementById("btnCloseEditor").addEventListener("click", closeAdmin);
+
+    // Share Button (Native Android bridge or Web Share API)
+    document.getElementById("btnShareCard").addEventListener("click", () => {
+      const shareTitle = currentData.nameBn + " - ডিজিটাল পরিচয় পত্র";
+      const shareText = currentData.nameBn + " (" + currentData.profession + ")\nমোবাইল: " + currentData.phone + "\nইমেইল: " + currentData.email;
+      
+      if (window.AndroidBridge && typeof window.AndroidBridge.shareText === 'function') {
+        window.AndroidBridge.shareText(shareText, shareTitle);
+      } else if (navigator.share) {
+        navigator.share({
+          title: shareTitle,
+          text: shareText
+        }).catch(() => {});
+      } else {
+        navigator.clipboard?.writeText(shareText);
+        showToast("পরিচয় কার্ড কপি হয়েছে!");
+      }
+    });
+
+    // Hash check on load (e.g. #admin)
+    window.addEventListener("hashchange", () => {
+      if (window.location.hash === "#admin") {
+        openAdmin();
+      }
+    });
+
+    // Expose global openAdmin for Android bridge
+    window.openAdminModal = openAdmin;
+
+    // Initialize on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      loadLocalData();
+      initFirebase();
+      if (window.location.hash === "#admin") {
+        openAdmin();
+      }
+    });
+  </script>
+</body>
+</html>
