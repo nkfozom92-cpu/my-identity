@@ -1,0 +1,6 @@
+{
+  "name": "My Identity",
+  "description": "My Identity (আমার পরিচয়) - Digital Identity & Profile application with WebView, Bengali localization, Firebase Realtime Database and Admin Panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
